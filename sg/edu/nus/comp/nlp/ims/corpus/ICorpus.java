@@ -13,7 +13,7 @@ import java.io.Reader;
  * @author zhongzhi
  *
  */
-public interface ICorpus {
+public interface ICorpus extends java.io.Serializable {
 
 	/**
 	 * clear the corpus

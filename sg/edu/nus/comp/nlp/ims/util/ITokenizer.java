@@ -11,7 +11,7 @@ package sg.edu.nus.comp.nlp.ims.util;
  * @author zhongzhi
  * 
  */
-public interface ITokenizer {
+public interface ITokenizer extends java.io.Serializable {
 
 	/**
 	 * tokenize an input sentence into tokens

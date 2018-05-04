@@ -11,7 +11,7 @@ package sg.edu.nus.comp.nlp.ims.util;
  * @author zhongzhi
  * 
  */
-public interface ISenseIndex {
+public interface ISenseIndex extends java.io.Serializable{
 	/**
 	 * get the first sense of p_Lexelt
 	 * 

@@ -22,7 +22,7 @@ import opennlp.tools.postag.POSTaggerME;
  * @author zhongzhi
  *
  */
-public final class COpenNLPPOSTagger extends APTBPOSTagger {
+public final class COpenNLPPOSTagger extends APTBPOSTagger implements java.io.Serializable {
 
 	private static MaxentModel MODEL = null;
 	private static Dictionary DICTIONARY = null;

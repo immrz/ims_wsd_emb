@@ -11,7 +11,7 @@ package sg.edu.nus.comp.nlp.ims.util;
  * @author zhongzhi
  *
  */
-public interface ILemmatizer {
+public interface ILemmatizer extends java.io.Serializable {
 	/**
 	 * lemmatize the input
 	 * @param p_Input input information

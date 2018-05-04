@@ -17,6 +17,9 @@ import java.util.Hashtable;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
 
 import sg.edu.nus.comp.nlp.ims.classifiers.CLibLinearEvaluator;
 import sg.edu.nus.comp.nlp.ims.classifiers.IEvaluator;
@@ -65,7 +68,28 @@ public class CTester {
 	protected boolean m_Lemmatized = false;
 	// pos tagged
 	protected boolean m_POSTagged = false;
-
+	
+	protected int windowSize;
+	
+	protected String integrationStrategy;
+	
+	private boolean onlyEmbed = false;
+	
+	private boolean skipSur = false;
+	private boolean skipCol = false;
+	private boolean skipPOS = false;
+	
+	// if binary corpus file is applied, read it
+	private String quickCorpus = null;
+	private String writeCorpus = null;
+	
+	/*** added by mrz ***/
+	
+	// use the alpha as features
+	private String m_Alpha_Feature = null;
+	
+	/*** end ***/
+	
 	/**
 	 * test xml file
 	 *
@@ -74,9 +98,9 @@ public class CTester {
 	 * @throws Exception
 	 *             test exception
 	 */
-	public void test(String p_XmlFile) throws Exception {
+	public void test(String p_XmlFile, String embFile) throws Exception {
 		Reader reader = new InputStreamReader(new FileInputStream(p_XmlFile));
-		this.test(reader);
+		this.test(reader, embFile);
 		reader.close();
 	}
 
@@ -90,7 +114,7 @@ public class CTester {
 	 * @throws Exception
 	 *             test exception
 	 */
-	public void test(String p_XmlFile, String p_LexeltFile) throws Exception {
+	public void test(String p_XmlFile, String p_LexeltFile, String embFile) throws Exception {
 		String line = null;
 		StringTokenizer tokenizer = null;
 		Hashtable<String, ArrayList<String>> instanceLexeltIDs = new Hashtable<String, ArrayList<String>>();
@@ -110,7 +134,7 @@ public class CTester {
 		}
 		lexeltReader.close();
 		Reader reader = new InputStreamReader(new FileInputStream(p_XmlFile));
-		this.test(reader, instanceLexeltIDs);
+		this.test(reader, instanceLexeltIDs, embFile);
 		reader.close();
 	}
 
@@ -122,8 +146,8 @@ public class CTester {
 	 * @throws Exception
 	 *             test exceptoin
 	 */
-	public void test(Reader p_XmlReader) throws Exception {
-		this.test(p_XmlReader, null);
+	public void test(Reader p_XmlReader, String embFile) throws Exception {
+		this.test(p_XmlReader, null, embFile);
 	}
 
 	/**
@@ -136,12 +160,56 @@ public class CTester {
 	 * @throws Exception
 	 *             test exception
 	 */
-	public void test(Reader p_XmlReader, Hashtable<String, ArrayList<String>> p_InstanceLexeltIDs)
+	public void test(Reader p_XmlReader, Hashtable<String, ArrayList<String>> p_InstanceLexeltIDs, String embFile)
 			throws Exception {
 		IInstanceExtractor instExtractor = (IInstanceExtractor) Class.forName(
 				this.m_InstanceExtractorName).newInstance();
-		IFeatureExtractor featExtractor = (IFeatureExtractor) Class.forName(
-				this.m_FeatureExtractorName).newInstance();
+		
+		CFeatureExtractorCombination.Builder builder = new CFeatureExtractorCombination.Builder();
+		if (!this.onlyEmbed) 			
+			if (!this.skipPOS)
+				builder = builder.addPOSFeature();
+			if (!this.skipCol)
+				builder = builder.addCollocationFeature();
+			if (!this.skipSur)
+				builder = builder.addSurroundingWordFeature();
+		
+		if (!embFile.isEmpty()) {
+			switch(this.integrationStrategy) {
+			case "CON":
+				builder.addConcatenatedEmbeddingFeature(embFile, windowSize);
+				break;
+			case "AVG":
+				builder.addAveragedEmbeddingFeature(embFile, windowSize);
+				break;
+			case "FRA":
+				builder.addFractionalDecayedEmbeddingFeature(embFile, windowSize);
+				break;
+			case "EXP":
+				builder.addExponentialDecayedEmbeddingFeature(embFile, windowSize);
+				break;
+			case "ATT":
+				builder.addCtxExpDecayEmbeddingFeature(embFile, windowSize);
+				break;
+			case "SINGLE":
+				builder.addSingleEmbeddingFeature(embFile);
+				break;
+			case "ONLYTGT":
+				builder.addTargetOnlyEmbeddingFeature(embFile, windowSize);
+				break;
+			case "AutoExt":
+				builder.addAutoExtProductFeature();
+				break;
+			}
+		}
+		
+		if (this.m_Alpha_Feature != null) {
+			builder.addSingleEmbeddingFeature(this.m_Alpha_Feature);
+		}
+			
+//		IFeatureExtractor featExtractor = (IFeatureExtractor) Class.forName(
+//				this.m_FeatureExtractorName).newInstance();
+		IFeatureExtractor featExtractor = builder.build();
 		ACorpus corpus = (ACorpus) Class.forName(this.m_CorpusName)
 				.newInstance();
 		if (this.m_Delimiter != null) {
@@ -151,7 +219,36 @@ public class CTester {
 		corpus.setTokenized(this.m_Tokenized);
 		corpus.setPOSTagged(this.m_POSTagged);
 		corpus.setLemmatized(this.m_Lemmatized);
-		corpus.load(p_XmlReader);
+		
+		if (this.quickCorpus != null) {
+			try {
+				FileInputStream fileIn = new FileInputStream(this.quickCorpus);
+				ObjectInputStream in = new ObjectInputStream(fileIn);
+				corpus = (ACorpus) in.readObject();
+				in.close();
+				fileIn.close();
+			} catch (Exception i) {
+				i.printStackTrace();
+			}
+		} else {
+			boolean success = corpus.load(p_XmlReader);
+			if (this.writeCorpus != null) {
+				try {
+					FileOutputStream fileOut = new FileOutputStream(this.writeCorpus);
+					ObjectOutputStream out = new ObjectOutputStream(fileOut);
+					out.writeObject(corpus);
+					out.close();
+					fileOut.close();
+				} catch (Exception i) {
+					i.printStackTrace();
+				}
+			}
+			if (success)
+				System.out.println("writing succeeded");
+			else
+				System.out.println("writing failed");
+			return;
+		}
 
 		if (this.m_Writer != null && CPlainCorpusResultWriter.class.isInstance(this.m_Writer)) {
 			((CPlainCorpusResultWriter)this.m_Writer).setCorpus(corpus);
@@ -310,6 +407,38 @@ public class CTester {
 	public void clear() {
 		this.m_Results.clear();
 	}
+	
+	private void setWindowSize(int windowSize) {
+		this.windowSize = windowSize;
+	}
+	
+	private void setIntegrationStrategy(String integrationStrategy) {
+		this.integrationStrategy = integrationStrategy;
+	}
+	
+	private void setSkipSur(boolean skipSur) {
+		this.skipSur = skipSur;
+	}
+	  
+	private void setSkipCol(boolean skipCol) {
+		this.skipCol = skipCol;
+	}
+	  
+	private void setSkipPOS(boolean skipPOS) {
+		this.skipPOS = skipPOS;
+	}
+	  
+	private void setOnlyEmbed(boolean onlyEmbed) {
+		this.onlyEmbed = onlyEmbed;
+	}
+	
+	private void setQuickCorpus(String quickCorpus) {
+		this.quickCorpus = quickCorpus;
+	}
+	
+	private void setWriteCorpus(String writeCorpus) {
+		this.writeCorpus = writeCorpus;
+	}
 
 	/**
 	 * @param p_Args
@@ -442,6 +571,43 @@ public class CTester {
 			if (argmgr.has("c")) {
 				tester.setCorpusClassName(argmgr.get("c"));
 			}
+			
+			File embFile = null;
+			if (argmgr.has("emb")) {
+				embFile = new File(argmgr.get("emb"));
+			}
+			if (argmgr.has("ws")) {
+				tester.setWindowSize(Integer.parseInt(argmgr.get("ws")));
+			}
+			if (argmgr.has("str")) {
+				tester.setIntegrationStrategy(argmgr.get("str"));
+			}
+			
+			if (argmgr.has("onlyEmb")) {
+				tester.setOnlyEmbed(true);
+			}
+			if (argmgr.has("skipPos")) {
+				tester.setSkipPOS(true);
+			}
+			if (argmgr.has("skipCol")) {
+				tester.setSkipCol(true);
+			}
+			if (argmgr.has("skipSur")) {
+				tester.setSkipSur(true);
+			}
+			
+			// to build corpus quickly from binary file
+			if (argmgr.has("readCorpus")) {
+				tester.setQuickCorpus(argmgr.get("readCorpus"));
+			}
+			
+			if (argmgr.has("writeCorpus")) {
+				tester.setWriteCorpus(argmgr.get("writeCorpus"));
+			}
+			
+			if (argmgr.has("useAlpha")) {
+				tester.m_Alpha_Feature = argmgr.get("useAlpha");
+			}
 
 			Pattern xmlPattern = Pattern.compile("([^\\/]*)\\.xml$");
 			Matcher matcher = null;
@@ -472,9 +638,9 @@ public class CTester {
 			for (File testFile : testFiles) {
 				System.err.println("testing " + testFile.getAbsolutePath());
 				if (lexeltFile != null) {
-					tester.test(testFile.getAbsolutePath(), lexeltFile);
+					tester.test(testFile.getAbsolutePath(), lexeltFile, embFile != null ? embFile.getAbsolutePath() : "");
 				} else {
-					tester.test(testFile.getAbsolutePath());
+					tester.test(testFile.getAbsolutePath(), embFile != null ? embFile.getAbsolutePath() : "");
 				}
 				System.err.println("writing results");
 				tester.write();

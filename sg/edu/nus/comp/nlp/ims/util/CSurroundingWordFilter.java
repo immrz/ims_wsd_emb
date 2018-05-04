@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
  * @author zhongzhi
  *
  */
-public class CSurroundingWordFilter {
+public class CSurroundingWordFilter implements java.io.Serializable {
 
 	// default surrounding word filter
 	protected static CSurroundingWordFilter DEFAULT = new CSurroundingWordFilter();

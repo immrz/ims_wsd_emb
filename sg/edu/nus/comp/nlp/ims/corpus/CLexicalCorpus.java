@@ -7,6 +7,7 @@ package sg.edu.nus.comp.nlp.ims.corpus;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Matcher;
@@ -26,7 +27,7 @@ import sg.edu.nus.comp.nlp.ims.util.*;
  * @author zhongzhi
  *
  */
-public class CLexicalCorpus extends ACorpus {
+public class CLexicalCorpus extends ACorpus implements java.io.Serializable {
 	protected static String HEADSTART = "_HEAD_START_";
 	protected static String HEADEND = "_HEAD_END_";
 
@@ -86,9 +87,58 @@ public class CLexicalCorpus extends ACorpus {
 		texts = this.split(texts);
 		this.tokenize(texts);
 		this.posTag();
-		this.lemmatize();
-		this.genInfo();
-		this.m_Ready = true;
+		
+		try (FileWriter writer = new FileWriter(
+			"E:\\users\\v-rumao\\datasets\\ims_wsd_emb\\quickCorpus"
+			+ "\\se2-lex-sample\\train_tokenized_withID.txt")) {
+			
+			String sep = System.getProperty("line.separator");
+			int instID;
+			
+			for (instID = 0; instID < this.m_SentenceIDs.size(); instID++) {
+				int sentID = this.m_SentenceIDs.get(instID);
+				int wordID = this.m_Indice.get(instID);
+				ASentence sent = (ASentence)this.m_Sentences.get(sentID);
+				ArrayList<IItem> words = sent.m_Items;
+				
+				ArrayList<String> arrayToken = new ArrayList<String>();
+				ArrayList<String> arrayPOS = new ArrayList<String>(); 
+				
+				for (int i = wordID - 10; i <= wordID + 10; i++) {
+					if (i < 0 || i >= words.size())
+						continue;
+					AItem word = (AItem)words.get(i);
+					String token = word.m_Values.get(0).toLowerCase();
+					String POS = word.m_Values.get(2);
+					if (i == wordID) {
+						arrayToken.add("<head>" + token + "</head>");
+						arrayPOS.add("<head>" + POS + "</head>");
+					} else {
+						arrayToken.add(token);
+						arrayPOS.add(POS);
+					}
+				}
+				
+				writer.write(this.m_IDs.get(instID) + sep);
+				for (String token : arrayToken) {
+					writer.write(token + " ");
+				}
+				writer.write(sep);
+				
+				for (String POS : arrayPOS) {
+					writer.write(POS + " ");
+				}
+				writer.write(sep);
+				
+				writer.write(sep);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+//		this.lemmatize();
+//		this.genInfo();
+//		this.m_Ready = true;
 		return true;
 	}
 

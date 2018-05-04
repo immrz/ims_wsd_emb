@@ -12,7 +12,7 @@ package sg.edu.nus.comp.nlp.ims.corpus;
  * @author zhongzhi
  *
  */
-public interface IItem extends Cloneable {
+public interface IItem extends Cloneable, java.io.Serializable {
 
 	/**
 	 * get the number of values in this item

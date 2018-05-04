@@ -7,6 +7,7 @@ package sg.edu.nus.comp.nlp.ims.corpus;
 
 import java.io.BufferedReader;
 import java.io.Reader;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -19,7 +20,7 @@ import sg.edu.nus.comp.nlp.ims.util.*;
  * @author zhongzhi
  *
  */
-public class CAllWordsPlainCorpus extends ACorpus {
+public class CAllWordsPlainCorpus extends ACorpus implements java.io.Serializable {
 
 	/**
 	 * default constructor
@@ -80,7 +81,7 @@ public class CAllWordsPlainCorpus extends ACorpus {
 		this.m_Ready = true;
 		return true;
 	}
-
+	
 	/**
 	 * split paragraph into sentences
 	 * @param p_Texts paragraph

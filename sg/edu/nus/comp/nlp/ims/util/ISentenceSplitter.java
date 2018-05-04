@@ -11,7 +11,7 @@ package sg.edu.nus.comp.nlp.ims.util;
  * @author zhongzhi
  * 
  */
-public interface ISentenceSplitter {
+public interface ISentenceSplitter extends java.io.Serializable {
 	/**
 	 * split input into sentences
 	 * 

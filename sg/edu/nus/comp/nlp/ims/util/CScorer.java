@@ -100,6 +100,10 @@ public class CScorer {
 						correct++;
 					}
 				}
+				
+//				if (correct < 1e-3)
+//					System.out.print(id + " ");
+				
 				if (answer.senses.size() != 0) {
 					correct /= answer.senses.size();
 				}

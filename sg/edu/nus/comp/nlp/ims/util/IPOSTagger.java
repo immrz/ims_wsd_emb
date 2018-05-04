@@ -11,7 +11,7 @@ package sg.edu.nus.comp.nlp.ims.util;
  * @author zhongzhi
  *
  */
-public interface IPOSTagger {
+public interface IPOSTagger extends java.io.Serializable {
 	/**
 	 * tag a tokenized input sentence
 	 *

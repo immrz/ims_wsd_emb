@@ -6,6 +6,7 @@
 package sg.edu.nus.comp.nlp.ims.corpus;
 
 import java.io.Reader;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
@@ -85,7 +86,7 @@ public abstract class ACorpus implements ICorpus {
 	protected String m_Delimiter = this.m_DefaultDelimiter;
 
 	// postagger
-	protected IPOSTagger m_POSTagger = null;
+	protected transient IPOSTagger m_POSTagger = null;
 	/*
 	 * whether the input contains pos info
 	 * 	if true
@@ -94,7 +95,7 @@ public abstract class ACorpus implements ICorpus {
 	protected boolean m_POSTagged = false;
 
 	// sentence splitter
-	protected ISentenceSplitter m_SentenceSplitter;
+	protected transient ISentenceSplitter m_SentenceSplitter;
 	/*
 	 * whether the input is already split
 	 * 	if true
@@ -103,7 +104,7 @@ public abstract class ACorpus implements ICorpus {
 	protected boolean m_Split = false;
 
 	// tokenizer
-	protected ITokenizer m_Tokenizer = null;
+	protected transient ITokenizer m_Tokenizer = null;
 	/*
 	 * whether the input is already tokenized
 	 * 	if true
@@ -112,7 +113,7 @@ public abstract class ACorpus implements ICorpus {
 	protected boolean m_Tokenized = false;
 
 	// lemmatizer
-	protected ILemmatizer m_Lemmatizer;
+	protected transient ILemmatizer m_Lemmatizer;
 	/*
 	 * whether the input contains lemma info
 	 * 	if true

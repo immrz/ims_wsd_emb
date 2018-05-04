@@ -16,6 +16,10 @@ import java.util.Hashtable;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
+import java.io.FileWriter;
 
 import sg.edu.nus.comp.nlp.ims.classifiers.CLibLinearTrainer;
 import sg.edu.nus.comp.nlp.ims.classifiers.IModelTrainer;
@@ -88,8 +92,14 @@ public class CTrainModel {
 	private boolean skipCol = false;
 	private boolean skipPOS = false;
 	
-	/*** end new features ***/
+	// if binary corpus file is applied, read it
+	private String quickCorpus = null;
+	private String writeCorpus = null;
 	
+	// use the alpha as features
+	private String m_Alpha_Feature = null;
+	
+	/*** end new features ***/
 	
 	/**
 	 * default constructor
@@ -147,13 +157,14 @@ public class CTrainModel {
 		ACorpus corpus = (ACorpus) Class.forName(this.m_CorpusName).newInstance();
 		CFeatureExtractorCombination.Builder builder = new CFeatureExtractorCombination.Builder();
 		
-		if (!this.onlyEmbed) 			
+		if (!this.onlyEmbed) {
 			if (!this.skipPOS)
 				builder = builder.addPOSFeature();
 			if (!this.skipCol)
 				builder = builder.addCollocationFeature();
 			if (!this.skipSur)
 				builder = builder.addSurroundingWordFeature();
+		}
 			
 		if (!embFile.isEmpty()) {
 			switch(this.integrationStrategy) {
@@ -169,7 +180,23 @@ public class CTrainModel {
 			case "EXP":
 				builder.addExponentialDecayedEmbeddingFeature(embFile, windowSize);
 				break;
+			case "ATT":
+				builder.addCtxExpDecayEmbeddingFeature(embFile, windowSize);
+				break;
+			case "SINGLE":
+				builder.addSingleEmbeddingFeature(embFile);
+				break;
+			case "ONLYTGT":
+				builder.addTargetOnlyEmbeddingFeature(embFile, windowSize);
+				break;
+			case "AutoExt":
+				builder.addAutoExtProductFeature();
+				break;
 			}
+		}
+		
+		if (this.m_Alpha_Feature != null) {
+			builder.addSingleEmbeddingFeature(this.m_Alpha_Feature);
 		}
 
 		IFeatureExtractor featExtractor = builder.build(); 
@@ -182,7 +209,36 @@ public class CTrainModel {
 		corpus.setPOSTagged(this.m_POSTagged);
 		corpus.setLemmatized(this.m_Lemmatized);
 
-		corpus.load(p_XmlReader);
+		if (this.quickCorpus != null) {
+			try {
+				FileInputStream fileIn = new FileInputStream(this.quickCorpus);
+				ObjectInputStream in = new ObjectInputStream(fileIn);
+				corpus = (ACorpus) in.readObject();
+				in.close();
+				fileIn.close();
+			} catch (Exception i) {
+				i.printStackTrace();
+			}
+		} else {
+			boolean success = corpus.load(p_XmlReader);
+			if (this.writeCorpus != null) {
+				try {
+					FileOutputStream fileOut = new FileOutputStream(this.writeCorpus);
+					ObjectOutputStream out = new ObjectOutputStream(fileOut);
+					out.writeObject(corpus);
+					out.close();
+					fileOut.close();
+				} catch (Exception i) {
+					i.printStackTrace();
+				}
+			}
+			if (success)
+				System.out.println("writing succeeded");
+			else
+				System.out.println("writing failed");
+			return;
+		}
+		
 		instExtractor.setCorpus(corpus);
 		instExtractor.setFeatureExtractor(featExtractor);
 		Hashtable<String, ILexelt> lexelts = new Hashtable<String, ILexelt>();
@@ -380,6 +436,14 @@ public class CTrainModel {
 		this.onlyEmbed = onlyEmbed;
 	}
 
+	private void setQuickCorpus(String quickCorpus) {
+		this.quickCorpus = quickCorpus;
+	}
+	
+	private void setWriteCorpus(String writeCorpus) {
+		this.writeCorpus = writeCorpus;
+	}
+	
 	/**
 	 * @param p_Args
 	 *            arguments
@@ -547,6 +611,19 @@ public class CTrainModel {
 				trainModel.setCutOff("p2", p2);
 			}
 			
+			// to build corpus quickly from binary file
+			if (argmgr.has("readCorpus")) {
+				trainModel.setQuickCorpus(argmgr.get("readCorpus"));
+			}
+			
+			if (argmgr.has("writeCorpus")) {
+				trainModel.setWriteCorpus(argmgr.get("writeCorpus"));
+			}
+			
+			// to use alpha as features
+			if (argmgr.has("useAlpha")) {
+				trainModel.m_Alpha_Feature = argmgr.get("useAlpha");
+			}
 			
 			ArrayList<File> trainXmlList = new ArrayList<File>();
 			ArrayList<File> trainKeyList = new ArrayList<File>();

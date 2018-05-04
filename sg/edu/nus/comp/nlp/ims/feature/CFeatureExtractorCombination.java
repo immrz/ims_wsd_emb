@@ -8,7 +8,8 @@ package sg.edu.nus.comp.nlp.ims.feature;
 import java.util.ArrayList;
 
 import pkg.feature.CEmbeddingsDimensionExtractor;
-import pkg.feature.emb.IntegrationStrategy;
+import com.ms.bdm.emb.CListEmbProductExtractor;
+import com.ms.bdm.emb.CCtxEmbExtractor;
 import sg.edu.nus.comp.nlp.ims.corpus.ICorpus;
 
 /**
@@ -64,23 +65,43 @@ public class CFeatureExtractorCombination implements IFeatureExtractor {
 			return this;
 		}
 		
+		public Builder addAutoExtProductFeature() {
+			features.add(new CSynsetProductFeatureExtractor());
+			return this;
+		}
+		
+		public Builder addCtxExpDecayEmbeddingFeature(String file, int windowSize) {
+			features.add(new CCtxEmbExtractor(file, com.ms.bdm.emb.strategy.IntegrationStrategy.exponential(windowSize)));
+			return this;
+		}
+		
+		public Builder addTargetOnlyEmbeddingFeature(String file, int windowSize) {
+			features.add(new CCtxEmbExtractor(file, com.ms.bdm.emb.strategy.IntegrationStrategy.onlyTargetEmb(windowSize)));
+			return this;
+		}
+		
+		public Builder addSingleEmbeddingFeature(String file) {
+			features.add(new CListEmbProductExtractor(file));
+			return this;
+		}
+		
 		public Builder addConcatenatedEmbeddingFeature(String file, int windowSize) {
-			features.add(new CEmbeddingsDimensionExtractor(file, IntegrationStrategy.concatenation(windowSize)));
+			features.add(new CEmbeddingsDimensionExtractor(file, pkg.feature.emb.IntegrationStrategy.concatenation(windowSize)));
 			return this;
 		}
 			
 		public Builder addAveragedEmbeddingFeature(String file, int windowSize) {
-			features.add(new CEmbeddingsDimensionExtractor(file, IntegrationStrategy.average(windowSize)));
+			features.add(new CEmbeddingsDimensionExtractor(file, pkg.feature.emb.IntegrationStrategy.average(windowSize)));
 			return this;
 		}
 			
 		public Builder addFractionalDecayedEmbeddingFeature(String file, int windowSize) {
-			features.add(new CEmbeddingsDimensionExtractor(file, IntegrationStrategy.fractional(windowSize)));
+			features.add(new CEmbeddingsDimensionExtractor(file, pkg.feature.emb.IntegrationStrategy.fractional(windowSize)));
 			return this;
 		}
 			
 		public Builder addExponentialDecayedEmbeddingFeature(String file, int windowSize) {
-			features.add(new CEmbeddingsDimensionExtractor(file, IntegrationStrategy.exponential(windowSize)));
+			features.add(new CEmbeddingsDimensionExtractor(file, pkg.feature.emb.IntegrationStrategy.exponential(windowSize)));
 			return this;
 		}
 		

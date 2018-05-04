@@ -11,7 +11,7 @@ package sg.edu.nus.comp.nlp.ims.corpus;
  * @author zhongzhi
  * 
  */
-public interface ISentence extends Cloneable {
+public interface ISentence extends Cloneable, java.io.Serializable {
 	/**
 	 * append Item to the end
 	 * 

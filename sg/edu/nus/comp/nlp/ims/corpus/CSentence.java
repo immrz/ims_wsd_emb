@@ -11,7 +11,7 @@ package sg.edu.nus.comp.nlp.ims.corpus;
  * @author zhongzhi
  *
  */
-public class CSentence extends ASentence {
+public class CSentence extends ASentence implements java.io.Serializable {
 
 	/**
 	 * default constructor
